@@ -1,6 +1,6 @@
 {
   "name": "evernote-markdown",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "convert Evernote's note to markdown",
   "main": "index.coffee",
   "scripts": {

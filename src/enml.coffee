@@ -19,7 +19,7 @@ inlineElement = (str) ->
   str = "#{str} " if str.length
   return str
 
-recursiveWalk = (node) =>
+recursiveWalk = (node) ->
   # console.log node.name(), node.type(), node.toString()
   switch node.type()
     when 'text' then inlineElement node.toString()
@@ -44,14 +44,14 @@ recursiveWalk = (node) =>
           "[#{text}](#{href})"
         when 'br' then '\n'
         when 'div', 'en-note', 'ol', 'ul', 'p' then blockElement content
-        when 'en-todo' 
+        when 'en-todo'
           " - [#{if node.attr 'checked' then 'x' else ' '}] "
         else content
     else
       throw Error "no rule to parse #{node}"
 
-toMarkdown = (note) ->
-  xmlDoc = libxmljs.parseXml note.content
+toMarkdown = (content) ->
+  xmlDoc = libxmljs.parseXml content
   # console.log xmlDoc.root().text()
   content = recursiveWalk xmlDoc.root()
 

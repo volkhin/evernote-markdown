@@ -8,13 +8,14 @@ Convert Evernote's notes into Markdown syntax.
 
         git clone https://github.com/volkhin/evernote-markdown
         cd evernote-markdown
-        cp .env.example .env
 
-2. Get Developer Token at https://www.evernote.com/api/DeveloperToken.action
-    and put it into **.env**.
-3. Install node modules
+2. Install node modules
 
         npm install
+        cp .env.example .env
+
+3. Get Developer Token at https://www.evernote.com/api/DeveloperToken.action
+    and put it into **.env**.
 
 4. Execute script
 

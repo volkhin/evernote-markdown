@@ -1,5 +1,7 @@
 dotenv = require('dotenv').config()
 
+debug = require('debug')('evernote-markdown:client')
+
 Evernote2Markdown = require './src/evernote'
 
 token = process.env.EVERNOTE_TOKEN

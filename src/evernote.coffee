@@ -1,3 +1,5 @@
+debug = require('debug')('evernote-markdown:evernote-api')
+
 Evernote = require 'evernote'
 ENML = require './ENML'
 fs = require 'fs'
@@ -17,20 +19,26 @@ class Evernote2Markdown
     return @client
 
   saveToFile: (path, data) ->
-    fs.writeFile path, data
+    new Promise (resolve, reject) ->
+      fs.writeFile path, data, 'utf8', (err) ->
+        return reject err if err
+        resolve()
+    .catch (err) ->
+      console.error 'failed to write file', path, err
 
   handleNote: (note) =>
-    console.log "Loaded note '#{note.title}' (#{note.guid})"
+    debug "Loaded note '#{note.title}' (#{note.guid})"
     @noteStore.getNotebook note.notebookGuid
-    .then (response) =>
+    .then (notebook) =>
       path = "#{@directory}/#{notebook.name}"
+      debug 'making dir', path
       mkdirp path, (err) =>
         throw err if err? and err.code isnt 'EEXIST'
         markdown = ENML.toMarkdown note.content, true
         filename = note.title.replace /\//g, ''
         @saveToFile "#{path}/#{filename}.md", markdown
     .catch (err) ->
-      console.log 'handleNote', err
+      console.error 'handleNote', err
 
   convertNotes: ->
     @auth()
@@ -41,17 +49,17 @@ class Evernote2Markdown
     @noteStore.findNotesMetadata noteFilter, 0, 1000, spec
     .then (response) =>
       notes = response.notes
-      console.log "Found #{notes.length} note(s)"
+      debug "Found #{notes.length} note(s)"
       noteSpec =
         includeContent: true
       for note, i in notes
         @noteStore.getNoteWithResultSpec note.guid, noteSpec
-        .then (response) =>
+        .then (note) =>
           @handleNote note
         .catch (err) ->
-          console.log 'getNoteWithResultSpec', err
+          console.error 'getNoteWithResultSpec', err
           Promise.reject err
     .catch (err) ->
-      console.log 'convertNotes', err
+      console.error 'convertNotes', err
 
 module.exports = Evernote2Markdown

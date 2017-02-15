@@ -28,6 +28,7 @@
   "license": "MIT",
   "dependencies": {
     "coffee-script": "^1.12.3",
+    "debug": "^2.6.1",
     "dotenv": "^4.0.0",
     "entities": "^1.1.1",
     "evernote": "^2.0.1-beta",

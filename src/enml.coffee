@@ -1,3 +1,5 @@
+debug = require('debug')('evernote-markdown:enml')
+
 libxmljs = require 'libxmljs'
 entities = require 'entities'
 _ = require 'underscore'
@@ -19,8 +21,8 @@ inlineElement = (str) ->
   str = "#{str} " if str.length
   return str
 
-recursiveWalk = (node) =>
-  # console.log node.name(), node.type(), node.toString()
+recursiveWalk = (node) ->
+  debug node.name(), node.type(), node.toString()
   switch node.type()
     when 'text' then inlineElement node.toString()
     when 'comment' then ''
@@ -44,15 +46,15 @@ recursiveWalk = (node) =>
           "[#{text}](#{href})"
         when 'br' then '\n'
         when 'div', 'en-note', 'ol', 'ul', 'p' then blockElement content
-        when 'en-todo' 
+        when 'en-todo'
           " - [#{if node.attr 'checked' then 'x' else ' '}] "
         else content
     else
-      throw Error "no rule to parse #{node}"
+      throw new Error "no rule to parse #{node.type()} #{node.name()} #{node.toString()}"
 
-toMarkdown = (note) ->
-  xmlDoc = libxmljs.parseXml note.content
-  # console.log xmlDoc.root().text()
+toMarkdown = (content) ->
+  xmlDoc = libxmljs.parseXml content
+  debug xmlDoc.root().text()
   content = recursiveWalk xmlDoc.root()
 
 module.exports =

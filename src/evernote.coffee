@@ -1,4 +1,6 @@
-{Evernote} = require 'evernote'
+debug = require('debug')('evernote-markdown:evernote-api')
+
+Evernote = require 'evernote'
 ENML = require './ENML'
 fs = require 'fs'
 mkdirp = require 'mkdirp'
@@ -9,40 +11,55 @@ class Evernote2Markdown
   constructor: (@token) ->
 
   auth: ->
-    throw Error 'Please specify auth token!' if not @token
+    throw new Error 'Please specify auth token!' if not @token
     @client = new Evernote.Client
       token: @token
       sandbox: false
+      china: false
     return @client
 
   saveToFile: (path, data) ->
-    fs.writeFile path, data
+    new Promise (resolve, reject) ->
+      fs.writeFile path, data, 'utf8', (err) ->
+        return reject err if err
+        resolve()
+    .catch (err) ->
+      console.error 'failed to write file', path, err
 
   handleNote: (note) =>
-    console.log "Loaded node '#{note.title}' (#{note.guid})"
-    @noteStore.getNotebook note.notebookGuid, (err, notebook) =>
-      throw Error err if err?
+    debug "Loaded note '#{note.title}' (#{note.guid})"
+    @noteStore.getNotebook note.notebookGuid
+    .then (notebook) =>
       path = "#{@directory}/#{notebook.name}"
+      debug 'making dir', path
       mkdirp path, (err) =>
-        throw Error err if err? and err.code isnt 'EEXIST'
-        # @saveToFile "#{path}/#{note.title}.enml", note.content
-        markdown = ENML.toMarkdown note, true
-        # console.log markdown
+        throw err if err? and err.code isnt 'EEXIST'
+        markdown = ENML.toMarkdown note.content, true
         filename = note.title.replace /\//g, ''
         @saveToFile "#{path}/#{filename}.md", markdown
+    .catch (err) ->
+      console.error 'handleNote', err
 
   convertNotes: ->
     @auth()
     @noteStore = @client.getNoteStore()
-    noteFilter = new Evernote.NoteFilter()
-    spec = new Evernote.NotesMetadataResultSpec()
-    notes = @noteStore.findNotesMetadata noteFilter, 0, 1000, spec, (error, response) =>
-      throw Error err if err?
+    noteFilter = {}
+    spec =
+      includeTitle: true
+    @noteStore.findNotesMetadata noteFilter, 0, 1000, spec
+    .then (response) =>
       notes = response.notes
-      console.log "Found #{notes.length} note(s)"
+      debug "Found #{notes.length} note(s)"
+      noteSpec =
+        includeContent: true
       for note, i in notes
-        @noteStore.getNote note.guid, true, false, false, false, (error, note) =>
-          throw Error err if err?
+        @noteStore.getNoteWithResultSpec note.guid, noteSpec
+        .then (note) =>
           @handleNote note
+        .catch (err) ->
+          console.error 'getNoteWithResultSpec', err
+          Promise.reject err
+    .catch (err) ->
+      console.error 'convertNotes', err
 
 module.exports = Evernote2Markdown
